@@ -1,0 +1,370 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function userProfileExists(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid))
+        || existsAfter(/databases/$(database)/documents/users/$(uid));
+    }
+
+    function ownsCampaign(campaignId, uid) {
+      return (
+        exists(/databases/$(database)/documents/campaigns/$(campaignId))
+        && get(/databases/$(database)/documents/campaigns/$(campaignId)).data.ownerId == uid
+      ) || (
+        existsAfter(/databases/$(database)/documents/campaigns/$(campaignId))
+        && getAfter(/databases/$(database)/documents/campaigns/$(campaignId)).data.ownerId == uid
+      );
+    }
+
+    // Entity Blueprints
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'photoURL', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'photoURL', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128
+        && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() <= 120
+        && data.photoURL is string && data.photoURL.size() <= 500
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivateInfo(data) {
+      return data.keys().hasAll(['uid', 'email', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'updatedAt'])
+        && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128
+        && data.uid.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.uid == request.auth.uid
+        && data.email is string && data.email.size() <= 254
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCampaign(data) {
+      let requiredKeys = [
+        'ownerId', 'brandMode', 'brandName', 'prompt', 'audience', 'tone',
+        'campaignTitle', 'strategySummary', 'senderName', 'senderEmail',
+        'selectedSubjectIndex',
+        'subject1Angle', 'subject1Text', 'subject1Preview',
+        'subject2Angle', 'subject2Text', 'subject2Preview',
+        'subject3Angle', 'subject3Text', 'subject3Preview',
+        'subject4Angle', 'subject4Text', 'subject4Preview',
+        'heroHeadline', 'heroSubheadline', 'openingSalutation',
+        'sec1Heading', 'sec1Body', 'sec1Callout',
+        'sec2Heading', 'sec2Body', 'sec2Callout',
+        'sec3Heading', 'sec3Body', 'sec3Callout',
+        'primaryCtaLabel', 'primaryCtaUrl', 'closingSignoff',
+        'disclosuresText', 'plainTextVersion', 'visualPrompt',
+        'imageSize', 'aspectRatio', 'createdAt', 'updatedAt'
+      ];
+      return data.keys().hasAll(requiredKeys)
+        && data.keys().hasOnly(requiredKeys)
+        && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128
+        && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId == request.auth.uid
+        && data.brandMode is string && data.brandMode.size() <= 16 && data.brandMode in ['tdex', 'custom']
+        && data.brandName is string && data.brandName.size() <= 120
+        && data.prompt is string && data.prompt.size() <= 4000
+        && data.audience is string && data.audience.size() <= 200
+        && data.tone is string && data.tone.size() <= 120
+        && data.campaignTitle is string && data.campaignTitle.size() <= 200
+        && data.strategySummary is string && data.strategySummary.size() <= 1000
+        && data.senderName is string && data.senderName.size() <= 120
+        && data.senderEmail is string && data.senderEmail.size() <= 254
+        && data.selectedSubjectIndex is int && data.selectedSubjectIndex >= 0 && data.selectedSubjectIndex <= 3
+        && data.subject1Angle is string && data.subject1Angle.size() <= 80
+        && data.subject1Text is string && data.subject1Text.size() <= 300
+        && data.subject1Preview is string && data.subject1Preview.size() <= 400
+        && data.subject2Angle is string && data.subject2Angle.size() <= 80
+        && data.subject2Text is string && data.subject2Text.size() <= 300
+        && data.subject2Preview is string && data.subject2Preview.size() <= 400
+        && data.subject3Angle is string && data.subject3Angle.size() <= 80
+        && data.subject3Text is string && data.subject3Text.size() <= 300
+        && data.subject3Preview is string && data.subject3Preview.size() <= 400
+        && data.subject4Angle is string && data.subject4Angle.size() <= 80
+        && data.subject4Text is string && data.subject4Text.size() <= 300
+        && data.subject4Preview is string && data.subject4Preview.size() <= 400
+        && data.heroHeadline is string && data.heroHeadline.size() <= 300
+        && data.heroSubheadline is string && data.heroSubheadline.size() <= 600
+        && data.openingSalutation is string && data.openingSalutation.size() <= 200
+        && data.sec1Heading is string && data.sec1Heading.size() <= 200
+        && data.sec1Body is string && data.sec1Body.size() <= 4000
+        && data.sec1Callout is string && data.sec1Callout.size() <= 600
+        && data.sec2Heading is string && data.sec2Heading.size() <= 200
+        && data.sec2Body is string && data.sec2Body.size() <= 4000
+        && data.sec2Callout is string && data.sec2Callout.size() <= 600
+        && data.sec3Heading is string && data.sec3Heading.size() <= 200
+        && data.sec3Body is string && data.sec3Body.size() <= 4000
+        && data.sec3Callout is string && data.sec3Callout.size() <= 600
+        && data.primaryCtaLabel is string && data.primaryCtaLabel.size() <= 120
+        && data.primaryCtaUrl is string && data.primaryCtaUrl.size() <= 500
+        && data.closingSignoff is string && data.closingSignoff.size() <= 400
+        && data.disclosuresText is string && data.disclosuresText.size() <= 3000
+        && data.plainTextVersion is string && data.plainTextVersion.size() <= 15000
+        && data.visualPrompt is string && data.visualPrompt.size() <= 2000
+        && data.imageSize is string && data.imageSize.size() <= 8 && data.imageSize in ['1K', '2K', '4K']
+        && data.aspectRatio is string && data.aspectRatio.size() <= 8 && data.aspectRatio in ['16:9', '4:3', '1:1', '3:4']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCrmConnection(data) {
+      let keys = ['ownerId', 'provider', 'accountLabel', 'audienceDefault', 'status', 'createdAt', 'updatedAt'];
+      return data.keys().hasAll(keys)
+        && data.keys().hasOnly(keys)
+        && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128
+        && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId == request.auth.uid
+        && data.provider is string && data.provider.size() <= 24 && data.provider in ['mailchimp', 'hubspot', 'salesforce']
+        && data.accountLabel is string && data.accountLabel.size() <= 200
+        && data.audienceDefault is string && data.audienceDefault.size() <= 200
+        && data.status is string && data.status.size() <= 20 && data.status in ['connected', 'disconnected']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidScheduledDispatch(data) {
+      let keys = [
+        'ownerId', 'campaignId', 'campaignTitle', 'platform',
+        'audienceList', 'deliveryMode', 'scheduledFor', 'status',
+        'externalRef', 'createdAt', 'updatedAt'
+      ];
+      return data.keys().hasAll(keys)
+        && data.keys().hasOnly(keys)
+        && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128
+        && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId == request.auth.uid
+        && data.campaignId is string && data.campaignId.size() >= 1 && data.campaignId.size() <= 128
+        && data.campaignId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.campaignTitle is string && data.campaignTitle.size() <= 200
+        && data.platform is string && data.platform.size() <= 24 && data.platform in ['mailchimp', 'hubspot', 'salesforce']
+        && data.audienceList is string && data.audienceList.size() <= 200
+        && data.deliveryMode is string && data.deliveryMode.size() <= 24 && data.deliveryMode in ['export_draft', 'scheduled']
+        && data.scheduledFor is string && data.scheduledFor.size() <= 64
+        && data.status is string && data.status.size() <= 24 && data.status in ['draft_exported', 'scheduled', 'sent', 'cancelled']
+        && data.externalRef is string && data.externalRef.size() <= 200
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidChatMessage(data) {
+      let keys = ['ownerId', 'personaId', 'role', 'text', 'modelUsed', 'clientOrder', 'createdAt'];
+      return data.keys().hasAll(keys)
+        && data.keys().hasOnly(keys)
+        && data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128
+        && data.ownerId.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.ownerId == request.auth.uid
+        && data.personaId is string && data.personaId.size() <= 32 && data.personaId in ['strategist', 'columbo', 'pipito', 'rapid_copy']
+        && data.role is string && data.role.size() <= 12 && data.role in ['user', 'model']
+        && data.text is string && data.text.size() >= 1 && data.text.size() <= 12000
+        && data.modelUsed is string && data.modelUsed.size() <= 80
+        && data.clientOrder is int && data.clientOrder >= 0
+        && data.createdAt is timestamp;
+    }
+
+    // Collection 1: Users (Non-PII Root) & Isolated PII Subcollection
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+      allow create: if isVerifiedUser()
+        && isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == userId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && isOwner(userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt']);
+      allow delete: if false;
+
+      match /private/{docId} {
+        allow get: if isOwner(userId)
+          && isValidId(userId)
+          && isValidId(docId)
+          && docId == 'info'
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow list: if false;
+        allow create: if isVerifiedUser()
+          && isOwner(userId)
+          && isValidId(userId)
+          && isValidId(docId)
+          && docId == 'info'
+          && isValidUserPrivateInfo(incoming())
+          && incoming().uid == userId
+          && incoming().updatedAt == request.time
+          && userProfileExists(userId);
+        allow update: if isVerifiedUser()
+          && isValidId(userId)
+          && isValidId(docId)
+          && docId == 'info'
+          && isValidUserPrivateInfo(incoming())
+          && isOwner(userId)
+          && incoming().uid == existing().uid
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'updatedAt'])
+          && exists(/databases/$(database)/documents/users/$(userId));
+        allow delete: if false;
+      }
+    }
+
+    // Collection 2: Campaigns
+    match /campaigns/{campaignId} {
+      allow get: if isSignedIn()
+        && isValidId(campaignId)
+        && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn()
+        && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(campaignId)
+        && isValidCampaign(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && userProfileExists(request.auth.uid);
+      allow update: if isVerifiedUser()
+        && isValidId(campaignId)
+        && isValidCampaign(incoming())
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'brandMode', 'brandName', 'prompt', 'audience', 'tone',
+            'campaignTitle', 'strategySummary', 'senderName', 'senderEmail',
+            'selectedSubjectIndex',
+            'subject1Angle', 'subject1Text', 'subject1Preview',
+            'subject2Angle', 'subject2Text', 'subject2Preview',
+            'subject3Angle', 'subject3Text', 'subject3Preview',
+            'subject4Angle', 'subject4Text', 'subject4Preview',
+            'heroHeadline', 'heroSubheadline', 'openingSalutation',
+            'sec1Heading', 'sec1Body', 'sec1Callout',
+            'sec2Heading', 'sec2Body', 'sec2Callout',
+            'sec3Heading', 'sec3Body', 'sec3Callout',
+            'primaryCtaLabel', 'primaryCtaUrl', 'closingSignoff',
+            'disclosuresText', 'plainTextVersion', 'visualPrompt',
+            'imageSize', 'aspectRatio', 'updatedAt'
+          ])
+        );
+      allow delete: if isVerifiedUser()
+        && isValidId(campaignId)
+        && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection 3: CRM Connections
+    match /crmConnections/{connectionId} {
+      allow get: if isSignedIn()
+        && isValidId(connectionId)
+        && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn()
+        && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(connectionId)
+        && isValidCrmConnection(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && userProfileExists(request.auth.uid);
+      allow update: if isVerifiedUser()
+        && isValidId(connectionId)
+        && isValidCrmConnection(incoming())
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && incoming().provider == existing().provider
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['accountLabel', 'audienceDefault', 'status', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+        );
+      allow delete: if isVerifiedUser()
+        && isValidId(connectionId)
+        && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection 4: Scheduled Dispatches (with Relational Verification & Terminal State Locking)
+    match /scheduledDispatches/{dispatchId} {
+      allow get: if isSignedIn()
+        && isValidId(dispatchId)
+        && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn()
+        && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(dispatchId)
+        && isValidScheduledDispatch(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && userProfileExists(request.auth.uid)
+        && ownsCampaign(incoming().campaignId, request.auth.uid);
+      allow update: if isVerifiedUser()
+        && isValidId(dispatchId)
+        && isValidScheduledDispatch(incoming())
+        && existing().ownerId == request.auth.uid
+        && incoming().ownerId == existing().ownerId
+        && incoming().campaignId == existing().campaignId
+        && incoming().platform == existing().platform
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && !(existing().status in ['sent', 'cancelled'])
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['scheduledFor', 'audienceList', 'deliveryMode', 'status', 'updatedAt']) ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'externalRef', 'updatedAt'])
+        );
+      allow delete: if isVerifiedUser()
+        && isValidId(dispatchId)
+        && existing().ownerId == request.auth.uid;
+    }
+
+    // Collection 5: Multi-Turn Chat Messages (Append-Only per Thread)
+    match /chatMessages/{messageId} {
+      allow get: if isSignedIn()
+        && isValidId(messageId)
+        && existing().ownerId == request.auth.uid;
+      allow list: if isSignedIn()
+        && resource.data.ownerId == request.auth.uid;
+      allow create: if isVerifiedUser()
+        && isValidId(messageId)
+        && isValidChatMessage(incoming())
+        && incoming().createdAt == request.time
+        && userProfileExists(request.auth.uid);
+      allow update: if false;
+      allow delete: if isVerifiedUser()
+        && isValidId(messageId)
+        && existing().ownerId == request.auth.uid;
+    }
+  }
+}

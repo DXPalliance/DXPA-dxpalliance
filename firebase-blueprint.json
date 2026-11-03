@@ -1,0 +1,381 @@
+{
+  "entities": {
+    "UserProfilePublic": {
+      "title": "UserProfilePublic",
+      "description": "Publicly scoped non-PII user profile root document for relational ownership checks.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the owner."
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Display name from Google Sign-In."
+        },
+        "photoURL": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Avatar URL from Google Sign-In."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update."
+        }
+      },
+      "required": ["uid", "displayName", "photoURL", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII subcollection document storing user email.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "updatedAt"]
+    },
+    "CampaignRecord": {
+      "title": "CampaignRecord",
+      "description": "Persisted email marketing campaign copy, subject lines, and visual generation parameters.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "brandMode": {
+          "type": "string",
+          "enum": ["tdex", "custom"]
+        },
+        "brandName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "prompt": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "audience": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "tone": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "campaignTitle": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "strategySummary": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "senderName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "senderEmail": {
+          "type": "string",
+          "maxLength": 254
+        },
+        "selectedSubjectIndex": {
+          "type": "integer"
+        },
+        "subject1Angle": { "type": "string", "maxLength": 80 },
+        "subject1Text": { "type": "string", "maxLength": 300 },
+        "subject1Preview": { "type": "string", "maxLength": 400 },
+        "subject2Angle": { "type": "string", "maxLength": 80 },
+        "subject2Text": { "type": "string", "maxLength": 300 },
+        "subject2Preview": { "type": "string", "maxLength": 400 },
+        "subject3Angle": { "type": "string", "maxLength": 80 },
+        "subject3Text": { "type": "string", "maxLength": 300 },
+        "subject3Preview": { "type": "string", "maxLength": 400 },
+        "subject4Angle": { "type": "string", "maxLength": 80 },
+        "subject4Text": { "type": "string", "maxLength": 300 },
+        "subject4Preview": { "type": "string", "maxLength": 400 },
+        "heroHeadline": { "type": "string", "maxLength": 300 },
+        "heroSubheadline": { "type": "string", "maxLength": 600 },
+        "openingSalutation": { "type": "string", "maxLength": 200 },
+        "sec1Heading": { "type": "string", "maxLength": 200 },
+        "sec1Body": { "type": "string", "maxLength": 4000 },
+        "sec1Callout": { "type": "string", "maxLength": 600 },
+        "sec2Heading": { "type": "string", "maxLength": 200 },
+        "sec2Body": { "type": "string", "maxLength": 4000 },
+        "sec2Callout": { "type": "string", "maxLength": 600 },
+        "sec3Heading": { "type": "string", "maxLength": 200 },
+        "sec3Body": { "type": "string", "maxLength": 4000 },
+        "sec3Callout": { "type": "string", "maxLength": 600 },
+        "primaryCtaLabel": { "type": "string", "maxLength": 120 },
+        "primaryCtaUrl": { "type": "string", "maxLength": 500 },
+        "closingSignoff": { "type": "string", "maxLength": 400 },
+        "disclosuresText": { "type": "string", "maxLength": 3000 },
+        "plainTextVersion": { "type": "string", "maxLength": 15000 },
+        "visualPrompt": { "type": "string", "maxLength": 2000 },
+        "imageSize": { "type": "string", "enum": ["1K", "2K", "4K"] },
+        "aspectRatio": { "type": "string", "enum": ["16:9", "4:3", "1:1", "3:4"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "ownerId",
+        "brandMode",
+        "brandName",
+        "prompt",
+        "audience",
+        "tone",
+        "campaignTitle",
+        "strategySummary",
+        "senderName",
+        "senderEmail",
+        "selectedSubjectIndex",
+        "subject1Angle",
+        "subject1Text",
+        "subject1Preview",
+        "subject2Angle",
+        "subject2Text",
+        "subject2Preview",
+        "subject3Angle",
+        "subject3Text",
+        "subject3Preview",
+        "subject4Angle",
+        "subject4Text",
+        "subject4Preview",
+        "heroHeadline",
+        "heroSubheadline",
+        "openingSalutation",
+        "sec1Heading",
+        "sec1Body",
+        "sec1Callout",
+        "sec2Heading",
+        "sec2Body",
+        "sec2Callout",
+        "sec3Heading",
+        "sec3Body",
+        "sec3Callout",
+        "primaryCtaLabel",
+        "primaryCtaUrl",
+        "closingSignoff",
+        "disclosuresText",
+        "plainTextVersion",
+        "visualPrompt",
+        "imageSize",
+        "aspectRatio",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CrmConnectionRecord": {
+      "title": "CrmConnectionRecord",
+      "description": "Non-secret CRM integration connection status record for Mailchimp, HubSpot, and Salesforce.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "provider": {
+          "type": "string",
+          "enum": ["mailchimp", "hubspot", "salesforce"]
+        },
+        "accountLabel": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "audienceDefault": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "status": {
+          "type": "string",
+          "enum": ["connected", "disconnected"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "provider",
+        "accountLabel",
+        "audienceDefault",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ScheduledDispatchRecord": {
+      "title": "ScheduledDispatchRecord",
+      "description": "Exported or scheduled email campaign dispatch pushed to a connected CRM platform.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "campaignId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "campaignTitle": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["mailchimp", "hubspot", "salesforce"]
+        },
+        "audienceList": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "deliveryMode": {
+          "type": "string",
+          "enum": ["export_draft", "scheduled"]
+        },
+        "scheduledFor": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft_exported", "scheduled", "sent", "cancelled"]
+        },
+        "externalRef": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "campaignId",
+        "campaignTitle",
+        "platform",
+        "audienceList",
+        "deliveryMode",
+        "scheduledFor",
+        "status",
+        "externalRef",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ChatMessageRecord": {
+      "title": "ChatMessageRecord",
+      "description": "Multi-turn assistant chat history entry scoped strictly to the owner.",
+      "type": "object",
+      "properties": {
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "personaId": {
+          "type": "string",
+          "enum": ["strategist", "columbo", "pipito", "rapid_copy"]
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "modelUsed": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "clientOrder": {
+          "type": "integer"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "ownerId",
+        "personaId",
+        "role",
+        "text",
+        "modelUsed",
+        "clientOrder",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfilePublic",
+      "description": "Owner-restricted non-PII user profile documents."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": "UserPrivateInfo",
+      "description": "Owner-restricted isolated PII subcollection storing user email."
+    },
+    "/campaigns/{campaignId}": {
+      "schema": "CampaignRecord",
+      "description": "Owner-scoped email marketing campaign documents."
+    },
+    "/crmConnections/{connectionId}": {
+      "schema": "CrmConnectionRecord",
+      "description": "Owner-scoped CRM platform connection metadata."
+    },
+    "/scheduledDispatches/{dispatchId}": {
+      "schema": "ScheduledDispatchRecord",
+      "description": "Owner-scoped CRM export and scheduled campaign dispatches."
+    },
+    "/chatMessages/{messageId}": {
+      "schema": "ChatMessageRecord",
+      "description": "Owner-scoped multi-turn Gemini chatbot messages."
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "The Discovery Exchange · Parents Alliance",
+  "description": "We buy everything 100% debt-free. Just real families building a future for their kids.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
